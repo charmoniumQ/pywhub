@@ -8,9 +8,6 @@ on:
     branches-ignore:
       - gh-pages
 
-env:
-  WHUB_API_KEY: ${{ secrets.WHUB_API_KEY }}
-
 jobs:
   test:
     strategy:
@@ -35,6 +32,8 @@ jobs:
         pip install flake8
         flake8 -v .
     - name: Test
+      env:
+        WHUB_API_KEY: ${{ secrets.WHUB_API_KEY }}
       run: |
         pip install pytest
         pytest -sv test
