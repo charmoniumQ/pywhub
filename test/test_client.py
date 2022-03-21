@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 CRS4
+# Copyright (c) 2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,18 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pytest
+import os
+import shutil
 import uuid
-from whub import WorkflowHub
+from pathlib import Path
 
-BASE_URL = "https://dev.workflowhub.eu"
+import pytest
+
 PROJECT = "Testing"
-
-
-@pytest.fixture(scope="module")
-def client():
-    with WorkflowHub(base_url=BASE_URL) as c:
-        yield c
+THIS_DIR = Path(__file__).absolute().parent
 
 
 def test_resolve_project(client):
@@ -46,3 +43,20 @@ def test_resolve_workflow_not_found(client):
     p_id_ = client.resolve_project(PROJECT)
     id_ = client.resolve_workflow(p_id_, str(uuid.uuid4()))
     assert id_ is None
+
+
+@pytest.mark.skipif(not os.getenv("WHUB_API_KEY"), reason="requires API key")
+def test_upload_crate(client, tmpdir):
+    crate_dir = THIS_DIR / "data" / "sort-and-change-case"
+    crate_zip = tmpdir / "{crate_dir.name}.crate"
+    crate = shutil.make_archive(crate_zip, "zip", crate_dir)
+    p_id_ = client.resolve_project(PROJECT)
+    data = client.upload_crate(crate, p_id_)
+    wf_id = data["id"]
+    new_name = str(uuid.uuid4())
+    client.update_workflow_name(wf_id, new_name)
+    id_ = client.resolve_workflow(p_id_, new_name)
+    assert id_ == wf_id
+    data = client.get(f"workflows/{id_}")
+    assert data["attributes"]["title"] == new_name
+    client.delete(f"workflows/{id_}")

@@ -71,7 +71,7 @@ class WorkflowHub:
             kwargs["json"] = payload
         r = self.session.request(method, url, **kwargs)
         r.raise_for_status()
-        return r.json()["data"]
+        return r.json().get("data")
 
     def get(self, endpoint, payload=None):
         return self.request("GET", endpoint, payload=payload)
