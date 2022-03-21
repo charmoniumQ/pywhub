@@ -8,6 +8,9 @@ on:
     branches-ignore:
       - gh-pages
 
+env:
+  WHUB_API_KEY: ${{ secrets.WHUB_API_KEY }}
+
 jobs:
   test:
     strategy:
