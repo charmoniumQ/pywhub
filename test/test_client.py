@@ -55,6 +55,7 @@ def test_upload_crate(client, tmpdir):
     wf_id = data["id"]
     new_name = str(uuid.uuid4())
     client.update_workflow_name(wf_id, new_name)
+    client.reset()
     id_ = client.resolve_workflow(p_id_, new_name)
     assert id_ == wf_id
     data = client.get(f"workflows/{id_}")

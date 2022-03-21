@@ -31,25 +31,15 @@ from .version import VERSION
 __version__ = VERSION
 
 
-class WorkflowHub:
+class JsonApiClient:
 
-    BASE_URL = "https://workflowhub.eu"
-    API_HEADERS = {
-        "Content-type": "application/vnd.api+json",
-        "Accept": "application/vnd.api+json",
-        "Accept-Charset": "ISO-8859-1",
-    }
+    API_HEADERS = {}
 
-    def __init__(self, base_url=BASE_URL, api_key=None):
-        if not api_key:
-            api_key = os.getenv("WHUB_API_KEY")
+    def __init__(self, base_url, api_key=None):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         if api_key:
             self.session.headers.update({"authorization": f"Token {api_key}"})
-        self._wf_id_to_name = {}
-        self._project_map = {}
-        self._wf_maps = {}
 
     def disconnect(self):
         self.session.close()
@@ -60,18 +50,16 @@ class WorkflowHub:
     def __exit__(self, *args):
         self.disconnect()
 
-    def reset(self):
-        for d in self._wf_id_to_name, self._project_map, self._wf_maps:
-            d.clear()
-
     def request(self, method, endpoint, payload=None):
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        kwargs = {"headers": self.API_HEADERS}
+        kwargs = {}
+        if self.API_HEADERS:
+            kwargs["headers"] = self.API_HEADERS
         if payload:
             kwargs["json"] = payload
         r = self.session.request(method, url, **kwargs)
         r.raise_for_status()
-        return r.json().get("data")
+        return r.json()
 
     def get(self, endpoint, payload=None):
         return self.request("GET", endpoint, payload=payload)
@@ -87,6 +75,32 @@ class WorkflowHub:
 
     def delete(self, endpoint, payload=None):
         return self.request("DELETE", endpoint, payload=payload)
+
+
+class WorkflowHub(JsonApiClient):
+
+    BASE_URL = "https://workflowhub.eu"
+    API_HEADERS = {
+        "Content-type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Accept-Charset": "ISO-8859-1",
+    }
+
+    def __init__(self, base_url=BASE_URL, api_key=None):
+        if not api_key:
+            api_key = os.getenv("WHUB_API_KEY")
+        super().__init__(base_url, api_key=api_key)
+        self._wf_id_to_name = {}
+        self._project_map = {}
+        self._wf_maps = {}
+
+    def reset(self):
+        for d in self._wf_id_to_name, self._project_map, self._wf_maps:
+            d.clear()
+
+    def request(self, method, endpoint, payload=None):
+        response = super().request(method, endpoint, payload=payload)
+        return response.get("data")
 
     def resolve_project(self, name):
         if not self._project_map:
