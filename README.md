@@ -1,2 +1,4 @@
 # pywhub
-Interaction with the WorkflowHub API
+
+Provides a client for interacting with the
+[WorkflowHub](https://workflowhub.eu) API.
