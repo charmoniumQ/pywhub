@@ -43,6 +43,7 @@ jobs:
       run: |
         pip install pytest
         python tools/wait_for_hub.py -u ${{ env.WHUB_URL }} -t 300
+        sleep 5
         pytest -sv test
     - name: Docker teardown
       run: |
