@@ -24,6 +24,7 @@ Sleep until WorkflowHub is ready or the timeout is reached.
 
 import argparse
 import time
+import sys
 
 import requests
 from requests.exceptions import ConnectionError
@@ -43,10 +44,10 @@ def main(args):
             time.sleep(1)
         else:
             print(f"{args.url} ready after {elapsed} seconds")
-            break
+            return 0
         if elapsed >= args.timeout:
             print("Timeout reached")
-            break
+            return 1
 
 
 if __name__ == "__main__":
@@ -57,4 +58,4 @@ if __name__ == "__main__":
                         help="WorkflowHub URL")
     parser.add_argument("-t", "--timeout", type=int, metavar="INT", default=120,
                         help="timeout in seconds")
-    main(parser.parse_args())
+    sys.exit(main(parser.parse_args()))
