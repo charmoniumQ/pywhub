@@ -118,7 +118,7 @@ class WorkflowHub(JsonApiClient):
             data = self.get(f"/projects/{proj_id}")
             wf_ids = [_["id"] for _ in data["relationships"]["workflows"]["data"]]
             self._wf_maps[proj_id] = m = {self._wf_id_to_name.get(_): _ for _ in wf_ids}
-            m.pop(None)  # from workflows not visible to user
+            m.pop(None, None)  # from workflows not visible to user
         return m.get(wf_name)
 
     def upload_crate(self, filename, proj_id, wf_id=None):
@@ -134,13 +134,13 @@ class WorkflowHub(JsonApiClient):
         r.raise_for_status()
         return r.json()["data"]
 
-    def update_workflow_name(self, wf_id, wf_name):
+    def update_workflow_name(self, wf_id, new_name):
         payload = {
             "data": {
                 "id": wf_id,
                 "type": "workflows",
                 "attributes": {
-                    "title": wf_name
+                    "title": new_name
                 }
             }
         }

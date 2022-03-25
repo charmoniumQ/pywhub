@@ -12,9 +12,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.7, 3.8, 3.9]
-    runs-on: ${{ matrix.os }}
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+    runs-on: 'ubuntu-latest'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -31,9 +30,21 @@ jobs:
       run: |
         pip install flake8
         flake8 -v .
+    - name: Docker setup
+      run: |
+        docker pull crs4/seek:workflow-pywhub
+        docker pull crs4/seek:workflow-pywhub-data
+        docker run -v /seek/filestore -v /seek/sqlite3-db --name hubdata crs4/seek:workflow-pywhub-data bash
+        docker run -d -p 3000:3000 --volumes-from hubdata --name hub crs4/seek:workflow-pywhub
     - name: Test
       env:
-        WHUB_API_KEY: ${{ secrets.WHUB_API_KEY }}
+        WHUB_URL: 'http://localhost:3000'
+        WHUB_API_KEY: 'gsBPTvcPk9EruYb41jY18DMr3ATfzSEaOoqvVutF'
       run: |
         pip install pytest
+        python tools/wait_for_hub.py -u ${{ env.WHUB_URL }} -t 300
         pytest -sv test
+    - name: Docker teardown
+      run: |
+        docker stop hub
+        docker rm hub hubdata

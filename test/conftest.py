@@ -18,11 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 from pathlib import Path
 from whub import WorkflowHub
 import pytest
 
-BASE_URL = "https://dev.workflowhub.eu"
+BASE_URL = os.getenv("WHUB_URL", "https://dev.workflowhub.eu")
 
 
 # pytest's default tmpdir returns a py.path object
