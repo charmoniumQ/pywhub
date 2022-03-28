@@ -31,11 +31,7 @@ jobs:
         pip install flake8
         flake8 -v .
     - name: Docker setup
-      run: |
-        docker pull crs4/seek:workflow-pywhub
-        docker pull crs4/seek:workflow-pywhub-data
-        docker run -v /seek/filestore -v /seek/sqlite3-db --name hubdata crs4/seek:workflow-pywhub-data bash
-        docker run -d -p 3000:3000 --volumes-from hubdata --name hub crs4/seek:workflow-pywhub
+      run: make setup
     - name: Test
       env:
         WHUB_URL: 'http://localhost:3000'
@@ -46,6 +42,4 @@ jobs:
         sleep 5
         pytest -sv test
     - name: Docker teardown
-      run: |
-        docker stop hub
-        docker rm hub hubdata
+      run: make teardown
