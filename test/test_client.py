@@ -53,6 +53,8 @@ def test_upload_crate(client, tmpdir):
     p_id_ = client.resolve_project(PROJECT)
     data = client.upload_crate(crate, p_id_)
     wf_id = data["id"]
+    wf_version = data["attributes"]["latest_version"]
+    # change name
     new_name = str(uuid.uuid4())
     client.update_workflow_name(wf_id, new_name)
     client.reset()
@@ -60,4 +62,8 @@ def test_upload_crate(client, tmpdir):
     assert id_ == wf_id
     data = client.get(f"workflows/{id_}")
     assert data["attributes"]["title"] == new_name
+    # upload new version
+    data = client.upload_crate(crate, p_id_, wf_id=wf_id)
+    assert data["attributes"]["latest_version"] != wf_version
+    # clean up
     client.delete(f"workflows/{id_}")
