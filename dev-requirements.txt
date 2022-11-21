@@ -1,0 +1,6 @@
+mypy
+types-requests
+black
+isort
+pylint
+pytest

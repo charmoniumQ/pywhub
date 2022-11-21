@@ -20,19 +20,22 @@
 
 import os
 from pathlib import Path
-from whub import WorkflowHub
+from typing import Generator
+
 import pytest
+
+from whub import WorkflowHub
 
 BASE_URL = os.getenv("WHUB_URL", "https://dev.workflowhub.eu")
 
 
 # pytest's default tmpdir returns a py.path object
 @pytest.fixture
-def tmpdir(tmpdir):
-    return Path(tmpdir)
+def tmpdir(tmpdir_name: str) -> Path:
+    return Path(tmpdir_name)
 
 
 @pytest.fixture(scope="module")
-def client():
+def client() -> Generator[WorkflowHub, None, None]:
     with WorkflowHub(base_url=BASE_URL) as c:
         yield c

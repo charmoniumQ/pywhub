@@ -19,7 +19,9 @@
 # SOFTWARE.
 
 from pathlib import Path
+
 from setuptools import setup
+
 from whub.version import VERSION
 
 THIS_DIR = Path(__file__).absolute().parent
@@ -43,7 +45,7 @@ setup(
         "Intended Audience :: Science/Research",
     ],
     packages=["whub"],
-    python_requires='>=3.6, <4',
+    python_requires=">=3.6, <4",
     install_requires=["requests"],
     zip_safe=True,
 )

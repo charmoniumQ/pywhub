@@ -1,0 +1,14 @@
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+strict = true
+pretty = true
+error_summary = true
+color_output = true
+
+[tool.pytest.ini_options]
+addopts = "--quiet"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = "missing-module-docstring,missing-class-docstring,missing-function-docstring,invalid-name"

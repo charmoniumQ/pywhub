@@ -24,8 +24,14 @@ Provides a client for interacting with the WorkflowHub API.
 WorkflowHub (https://workflowhub.eu) is a computational workflow registry.
 """
 
+from __future__ import annotations
+
 import os
+from types import TracebackType
+from typing import Any, Mapping, Optional
+
 import requests
+
 from .version import VERSION
 
 __version__ = VERSION
@@ -33,47 +39,48 @@ __version__ = VERSION
 
 class JsonApiClient:
 
-    API_HEADERS = {}
+    API_HEADERS: dict[str, str] = {}
 
-    def __init__(self, base_url, api_key=None):
+    def __init__(self, base_url: str, api_key: Optional[str] = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
         if api_key:
             self.session.headers.update({"authorization": f"Token {api_key}"})
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.session.close()
 
-    def __enter__(self):
+    def __enter__(self) -> JsonApiClient:
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, _exc_type: None, _exc_val: None, _exc_tb: None) -> None:
         self.disconnect()
 
-    def request(self, method, endpoint, payload=None):
+    def request(self, method: str, endpoint: str, payload: Any = None) -> Any:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        kwargs = {}
+        headers = {}
+        json = None
         if self.API_HEADERS:
-            kwargs["headers"] = self.API_HEADERS
+            headers = self.API_HEADERS
         if payload:
-            kwargs["json"] = payload
-        r = self.session.request(method, url, **kwargs)
+            json = payload
+        r = self.session.request(method, url, headers=headers, json=json)
         r.raise_for_status()
         return r.json()
 
-    def get(self, endpoint, payload=None):
+    def get(self, endpoint: str, payload: Any = None) -> Any:
         return self.request("GET", endpoint, payload=payload)
 
-    def post(self, endpoint, payload=None):
+    def post(self, endpoint: str, payload: Any = None) -> Any:
         return self.request("POST", endpoint, payload=payload)
 
-    def put(self, endpoint, payload=None):
+    def put(self, endpoint: str, payload: Any = None) -> Any:
         return self.request("PUT", endpoint, payload=payload)
 
-    def patch(self, endpoint, payload=None):
+    def patch(self, endpoint: str, payload: Any = None) -> Any:
         return self.request("PATCH", endpoint, payload=payload)
 
-    def delete(self, endpoint, payload=None):
+    def delete(self, endpoint: str, payload: Any = None) -> Any:
         return self.request("DELETE", endpoint, payload=payload)
 
 
@@ -86,29 +93,30 @@ class WorkflowHub(JsonApiClient):
         "Accept-Charset": "ISO-8859-1",
     }
 
-    def __init__(self, base_url=BASE_URL, api_key=None):
+    def __init__(self, base_url: str = BASE_URL, api_key: Optional[str] = None) -> None:
         if not api_key:
             api_key = os.getenv("WHUB_API_KEY")
         super().__init__(base_url, api_key=api_key)
-        self._wf_id_to_name = {}
-        self._project_map = {}
-        self._wf_maps = {}
+        self._wf_id_to_name: dict[int, str] = {}
+        self._project_map: dict[str, int] = {}
+        self._wf_maps: dict[int, Mapping[Optional[str], Optional[int]]] = {}
 
-    def reset(self):
-        for d in self._wf_id_to_name, self._project_map, self._wf_maps:
-            d.clear()
+    def reset(self) -> None:
+        self._wf_id_to_name.clear()
+        self._project_map.clear()
+        self._wf_maps.clear()
 
-    def request(self, method, endpoint, payload=None):
+    def request(self, method: str, endpoint: str, payload: Any = None) -> Any:
         response = super().request(method, endpoint, payload=payload)
         return response.get("data")
 
-    def resolve_project(self, name):
+    def resolve_project(self, name: str) -> Any:
         if not self._project_map:
             for p in self.get("/projects"):
                 self._project_map[p["attributes"]["title"]] = p["id"]
         return self._project_map.get(name)
 
-    def resolve_workflow(self, proj_id, wf_name):
+    def resolve_workflow(self, proj_id: int, wf_name: str) -> Any:
         try:
             m = self._wf_maps[proj_id]
         except KeyError:
@@ -121,27 +129,30 @@ class WorkflowHub(JsonApiClient):
             m.pop(None, None)  # from workflows not visible to user
         return m.get(wf_name)
 
-    def upload_crate(self, filename, proj_id, wf_id=None):
+    def upload_crate(
+        self, filename: os.PathLike[str], proj_id: int, wf_id: Optional[int] = None
+    ) -> Any:
         endpoint = f"{self.base_url}/workflows"
         if wf_id:
             endpoint = f"{endpoint}/{wf_id}/create_version"
         with open(filename, "rb") as f:
             payload = {
                 "ro_crate": (os.path.basename(filename), f),
-                "workflow[project_ids][]": (None, proj_id)
+                "workflow[project_ids][]": (None, proj_id),
             }
-            r = self.session.post(endpoint, files=payload)
+            r = self.session.post(endpoint, files=payload)  # type: ignore
         r.raise_for_status()
         return r.json()["data"]
 
-    def update_workflow_name(self, wf_id, new_name):
+    def update_workflow_name(self, wf_id: int, new_name: str) -> Any:
         payload = {
             "data": {
                 "id": wf_id,
                 "type": "workflows",
-                "attributes": {
-                    "title": new_name
-                }
+                "attributes": {"title": new_name},
             }
         }
         return self.patch(f"/workflows/{wf_id}", payload=payload)
+
+    def __enter__(self) -> WorkflowHub:
+        return self

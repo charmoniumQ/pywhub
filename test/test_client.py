@@ -25,31 +25,33 @@ from pathlib import Path
 
 import pytest
 
+from whub import WorkflowHub
+
 PROJECT = "Testing"
 THIS_DIR = Path(__file__).absolute().parent
 
 
-def test_resolve_project(client):
+def test_resolve_project(client: WorkflowHub) -> None:
     id_ = client.resolve_project(PROJECT)
     assert id_ is not None
 
 
-def test_resolve_project_not_found(client):
+def test_resolve_project_not_found(client: WorkflowHub) -> None:
     id_ = client.resolve_project(str(uuid.uuid4()))
     assert id_ is None
 
 
-def test_resolve_workflow_not_found(client):
+def test_resolve_workflow_not_found(client: WorkflowHub) -> None:
     p_id_ = client.resolve_project(PROJECT)
     id_ = client.resolve_workflow(p_id_, str(uuid.uuid4()))
     assert id_ is None
 
 
 @pytest.mark.skipif(not os.getenv("WHUB_API_KEY"), reason="requires API key")
-def test_upload_crate(client, tmpdir):
+def test_upload_crate(client: WorkflowHub, tmpdir: Path) -> None:
     crate_dir = THIS_DIR / "data" / "sort-and-change-case"
     crate_zip = tmpdir / "{crate_dir.name}.crate"
-    crate = shutil.make_archive(crate_zip, "zip", crate_dir)
+    crate = Path(shutil.make_archive(str(crate_zip), "zip", crate_dir))
     p_id_ = client.resolve_project(PROJECT)
     data = client.upload_crate(crate, p_id_)
     wf_id = data["id"]

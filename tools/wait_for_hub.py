@@ -23,12 +23,12 @@ Sleep until WorkflowHub is ready or the timeout is reached.
 """
 
 import argparse
-import time
 import sys
+import time
 
 import requests
-from requests.exceptions import ConnectionError
-
+# This rename avoids shadowing the builtin ConnectionError
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 DEFAULT_URL = "https://workflowhub.eu"
 
@@ -39,8 +39,8 @@ def main(args):
     while True:
         elapsed = round(time.time() - start)
         try:
-            requests.get(args.url).status_code
-        except ConnectionError:
+            requests.get(args.url, timeout=1).status_code
+        except RequestsConnectionError:
             time.sleep(1)
         else:
             print(f"{args.url} ready after {elapsed} seconds")
@@ -54,8 +54,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument("-u", "--url", metavar="URL", default=DEFAULT_URL,
-                        help="WorkflowHub URL")
-    parser.add_argument("-t", "--timeout", type=int, metavar="INT", default=120,
-                        help="timeout in seconds")
+    parser.add_argument(
+        "-u", "--url", metavar="URL", default=DEFAULT_URL, help="WorkflowHub URL"
+    )
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=int,
+        metavar="INT",
+        default=120,
+        help="timeout in seconds",
+    )
     sys.exit(main(parser.parse_args()))
